@@ -14,4 +14,15 @@ def ssim_score(images_ori, images_watermark):
         score, _ = ssim(np.array(images_ori[i].convert('L')), np.array(images_watermark[i].convert('L')), full=True)
         ans.append(score)
     return np.array(ans).mean()
+
+def calculate_mean_psnr(images1, images2):
+    if images1.shape != images2.shape:
+        raise ValueError("The dimensions of the two image batches do not match!")
     
+    mse = np.mean((images1 - images2) ** 2)
+    if mse == 0:
+        return float('inf')  # MSE 为零，PSNR 无穷大
+    
+    max_pixel = 255.0  # 假设输入为 8 位图像
+    psnr = 10 * np.log10(max_pixel ** 2 / mse)
+    return psnr

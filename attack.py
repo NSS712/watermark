@@ -94,3 +94,18 @@ def random_crop(images, area_ratio):
     resized_images = [cropped_image.resize((img_width, img_height), Image.BICUBIC) for cropped_image in cropped_images]
 
     return images_to_numpy(resized_images)
+
+def compression(images, quality=50):
+    images = numpy_to_images(images)
+    images_com = []
+    for i, img in enumerate(images):
+        img.save(f"./data/com/compressed_quality_{i}_{quality}.jpg", "JPEG", quality=quality)
+        img_com = Image.open(f"./data/com/compressed_quality_{i}_{quality}.jpg").convert("RGB")
+        images_com.append(img_com)
+        # if i == 0:
+        #     a = np.array(img).flatten()
+        #     b = np.array(img_com).flatten()
+        #     for i in range(len(a)):
+        #         print(f'{a[i]} -> {b[i]}')
+    return images_to_numpy(images_com)
+        
