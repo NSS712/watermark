@@ -59,7 +59,7 @@ def draw(f1,f2,f3,f4, image, image_watermark, image_rotate, image_crop, image_co
     plt.show()
     a = 1
     
-def numpy_to_images(numpy_array):
+def numpy_to_images(numpy_array, type="RGB"):
     """
     将形状为 (n, 3, 224, 224) 的 NumPy 数组转换为 n 张图片的 Image 对象。
 
@@ -77,7 +77,7 @@ def numpy_to_images(numpy_array):
     numpy_array = np.clip(numpy_array, 0, 255).astype(np.uint8)
 
     # 转换为 Pillow 的 Image 对象
-    images = [Image.fromarray(img) for img in numpy_array]
+    images = [Image.fromarray(img, mode=type) for img in numpy_array]
     
     return images
 

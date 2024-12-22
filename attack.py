@@ -8,7 +8,7 @@ import time
 from utils import *
 from scipy.interpolate import interp1d
 
-def rotate_image(images, angle=None, expand=True):
+def rotate_image(images, angle=None, expand=True, type="RGB"):
     """
     对图片进行旋转变换。
     
@@ -18,7 +18,7 @@ def rotate_image(images, angle=None, expand=True):
     :return: 旋转后的图片对象
     """
     # 打开图片
-    images = numpy_to_images(images)
+    images = numpy_to_images(images, type=type)
 
     # 如果未指定角度，随机生成一个角度
     if angle is None:
@@ -30,7 +30,7 @@ def rotate_image(images, angle=None, expand=True):
 
     return images_to_numpy(ans)
 
-def random_crop(images, area_ratio):
+def random_crop(images, area_ratio, type="RGB"):
     """
     对输入图像按面积比例随机裁剪，并调整回原尺寸。
 
@@ -39,7 +39,7 @@ def random_crop(images, area_ratio):
     :return: 裁剪并调整后的 Image 对象
     """
     # 获取图像的原始宽高
-    images = numpy_to_images(images)
+    images = numpy_to_images(images, type=type)
     img_width, img_height = images[0].size
 
     # 检查面积比例是否合法
@@ -71,29 +71,24 @@ def random_crop(images, area_ratio):
     cropped_images = [image.crop((left, top, right, bottom)) for image in images]
 
     # 调整裁剪后的图像回到原始尺寸
-    resized_images = [cropped_image.resize((img_width, img_height), Image.BICUBIC) for cropped_image in cropped_images]
+    resized_images = [cropped_image.resize((img_width, img_height), Image.BICUBIC).convert(type) for cropped_image in cropped_images]
 
     return images_to_numpy(resized_images)
 
-def compression(images, quality=50):
-    images = numpy_to_images(images)
+def compression(images, quality=50, type="RGB"):
+    images = numpy_to_images(images, type=type)
     images_com = []
     current_timestamp = int(time.time())
     for i, img in enumerate(images):
         img.save(f"./data/com/{current_timestamp}_compressed_quality_{i}_{quality}.jpg", "JPEG", quality=quality)
-        img_com = Image.open(f"./data/com/{current_timestamp}_compressed_quality_{i}_{quality}.jpg").convert("RGB")
+        img_com = Image.open(f"./data/com/{current_timestamp}_compressed_quality_{i}_{quality}.jpg").convert(type)
         images_com.append(img_com)
-        # if i == 0:
-        #     a = np.array(img).flatten()
-        #     b = np.array(img_com).flatten()
-        #     for i in range(len(a)):
-        #         print(f'{a[i]} -> {b[i]}')
     return images_to_numpy(images_com)
 
-def attack_all(images,k,target_fpr=0.01):
+def attack_all(images,k,target_fpr=0.01, type="RGB"):
     # 攻击
-    images_crop = random_crop(images,area_ratio=0.5) # 剪裁0.5的面积
-    images_compressed = compression(images,quality=10) # 以质量为10进行压缩
+    images_crop = random_crop(images,area_ratio=0.5,type=type) # 剪裁0.5的面积
+    images_compressed = compression(images,quality=10, type=type) # 以质量为10进行压缩
     # 计算z检验
     z_watermark = z_check(images,k=k)
     z_crop = z_check(images_crop,k=k)

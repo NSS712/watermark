@@ -3,7 +3,7 @@ import random
 from PIL import Image
 import numpy as np
 
-def load_random_images(directory, num_images=1000, target_size=(224,224)):
+def load_random_images(directory, num_images=1000, target_size=(224,224), type="RGB"):
     """
     从目录中随机选择 num_images 张图片并加载到内存。
     
@@ -21,7 +21,7 @@ def load_random_images(directory, num_images=1000, target_size=(224,224)):
     images = []
     for file in selected_files:
         try:
-            img = Image.open(file).convert('RGB')
+            img = Image.open(file).convert(type)
             img = img.resize(target_size) 
             img_array = np.array(img).transpose(2, 0, 1)
             images.append(img_array)
