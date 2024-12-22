@@ -2,32 +2,12 @@ from PIL import Image
 import random
 import numpy as np
 import math
+from examine import z_check
+from sklearn.metrics import roc_curve, roc_auc_score
+import time
+from utils import *
+from scipy.interpolate import interp1d
 
-def numpy_to_images(numpy_array):
-    """
-    将形状为 (n, 3, 224, 224) 的 NumPy 数组转换为 n 张图片的 Image 对象。
-
-    :param numpy_array: NumPy 数组，形状为 (n, 3, 224, 224)
-    :return: 包含 n 张 Image 对象的列表
-    """
-    # 检查输入形状
-    if len(numpy_array.shape) != 4 or numpy_array.shape[1] != 3:
-        raise ValueError("输入数组形状必须为 (n, 3, height, width)")
-
-    # 转换通道维度到最后，形状变为 (n, height, width, 3)
-    numpy_array = np.transpose(numpy_array, (0, 2, 3, 1))
-
-    # 确保像素值范围在 [0, 255]（如有需要可归一化或调整范围）
-    numpy_array = np.clip(numpy_array, 0, 255).astype(np.uint8)
-
-    # 转换为 Pillow 的 Image 对象
-    images = [Image.fromarray(img) for img in numpy_array]
-    
-    return images
-
-def images_to_numpy(images):
-    return np.array([np.array(img) for img in images]).transpose(0,3,1,2)
-    
 def rotate_image(images, angle=None, expand=True):
     """
     对图片进行旋转变换。
@@ -98,9 +78,10 @@ def random_crop(images, area_ratio):
 def compression(images, quality=50):
     images = numpy_to_images(images)
     images_com = []
+    current_timestamp = int(time.time())
     for i, img in enumerate(images):
-        img.save(f"./data/com/compressed_quality_{i}_{quality}.jpg", "JPEG", quality=quality)
-        img_com = Image.open(f"./data/com/compressed_quality_{i}_{quality}.jpg").convert("RGB")
+        img.save(f"./data/com/{current_timestamp}_compressed_quality_{i}_{quality}.jpg", "JPEG", quality=quality)
+        img_com = Image.open(f"./data/com/{current_timestamp}_compressed_quality_{i}_{quality}.jpg").convert("RGB")
         images_com.append(img_com)
         # if i == 0:
         #     a = np.array(img).flatten()
@@ -108,4 +89,23 @@ def compression(images, quality=50):
         #     for i in range(len(a)):
         #         print(f'{a[i]} -> {b[i]}')
     return images_to_numpy(images_com)
-        
+
+def attack_all(images,k,target_fpr=0.01):
+    # 攻击
+    images_crop = random_crop(images,area_ratio=0.5) # 剪裁0.5的面积
+    images_compressed = compression(images,quality=10) # 以质量为10进行压缩
+    # 计算z检验
+    z_watermark = z_check(images,k=k)
+    z_crop = z_check(images_crop,k=k)
+    z_compressed = z_check(images_compressed,k=k)
+    n = images.shape[0]//2
+    y_true = np.array([1] * n + [0] * n)
+    
+    results = []
+    for z_values in [z_watermark, z_crop, z_compressed]:
+        fpr, tpr, thresholds = roc_curve(y_true, z_values)
+        interp_tpr = interp1d(fpr, tpr, kind="linear", fill_value="extrapolate")
+        tpr_at_target_fpr = interp_tpr(target_fpr)
+        auc = roc_auc_score(y_true, z_values)
+        results.append((auc, tpr_at_target_fpr))
+    return results

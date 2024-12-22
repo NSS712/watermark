@@ -1,10 +1,16 @@
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
-from attack import numpy_to_images
+from utils import *
 
 def z_check(images, k=5):
     n = images[0].shape[1] * images[0].shape[2] * images[0].shape[0]
     return np.array([abs(np.sum((img//k)%2==0)* 2 - n)/n for img in images])
+
+def caculate(images_o, images_w):
+    ssim = ssim_score(images_o, images_w)
+    psnr = calculate_mean_psnr(images_o, images_w)
+    return (ssim, psnr)
+    
 
 def ssim_score(images_ori, images_watermark):
     ans = []
