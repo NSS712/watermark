@@ -85,7 +85,7 @@ def compression(images, quality=50, type="RGB"):
         images_com.append(img_com)
     return images_to_numpy(images_com)
 
-def attack_all(images,k,target_fpr=0.01, type="RGB"):
+def attack_all(images,k,target_fpr=0.1, type="RGB"):
     # 攻击
     images_crop = random_crop(images,area_ratio=0.5,type=type) # 剪裁0.5的面积
     images_compressed = compression(images,quality=10, type=type) # 以质量为10进行压缩

@@ -81,6 +81,6 @@ def numpy_to_images(numpy_array, type="RGB"):
     
     return images
 
-def images_to_numpy(images):
-    return np.array([np.array(img) for img in images]).transpose(0,3,1,2)
+def images_to_numpy(images, type="RGB"):
+    return np.array([np.array(img.convert(type)) for img in images]).transpose(0,3,1,2)
     

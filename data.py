@@ -23,11 +23,10 @@ def load_random_images(directory, num_images=1000, target_size=(224,224), type="
         try:
             img = Image.open(file).convert(type)
             img = img.resize(target_size) 
-            img_array = np.array(img).transpose(2, 0, 1)
-            images.append(img_array)
+            images.append(img)
         except Exception as e:
             print(f'加载图片{file}出错:{e}')
-    return np.array(images)
+    return images
 
 if __name__ == "__main__":
     images = load_random_images("E:/code/watermark/code/ILSVRC/Data/DET/test", 10)
