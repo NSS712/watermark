@@ -83,4 +83,30 @@ def numpy_to_images(numpy_array, type="RGB"):
 
 def images_to_numpy(images, type="RGB"):
     return np.array([np.array(img.convert(type)) for img in images]).transpose(0,3,1,2)
-    
+
+def is_green(x, k=5):
+    return (x//k)%2==0
+
+def distribution_visualize(data, k):
+    """
+    可视化数据分布, 将data按照k个像素一组，统计每组的数量，并可视化出来。
+    画出两个图像，一个是像素值的分布，一个是分组每组的分布。
+    """
+    if type(data[0])== Image.Image:
+        data = images_to_numpy(data)
+    data = data.flatten()
+    # 统计像素值的分布
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.hist(data, bins=256, range=[0, 256], color='r', alpha=0.6)
+    plt.xlabel('Pixel Values')
+    plt.ylabel('Frequency')
+    plt.title('Pixel Value Distribution')
+    plt.grid()
+
+    # 统计分组每组的分布
+    plt.subplot(1, 2, 2)
+    data_green = data[is_green(data, k)]
+    data_red = data[~is_green(data, k)]
+    plt.hist(data_green, bins=256//k, range=[0, 255], color='g', alpha=0.6)
+    plt.hist(data_red, bins=256//k, range=[0, 255], color='r', alpha=0.6)
