@@ -1,6 +1,6 @@
 import numpy as np
 from attack import images_to_numpy
-
+import torch
 def map(x, k=5):
     if (x//k)%2 : # x属于红区
         if x%k < k//2 : # 向下取整
@@ -20,6 +20,11 @@ def modify_red_to_green(images, k=5, value_range=None):
     """
     if value_range:
         pix_map = np.array(pixel_map(k=k, value_range=value_range))
+    elif isinstance(images, torch.Tensor):
+        device = images.device
+        images = images.cpu().numpy()
+        pix_map = np.vectorize(map)(images, k=k)
+        return torch.from_numpy(pix_map).to(device)
     else:
         pix_map = np.vectorize(map)(images, k=k)
     return pix_map
@@ -60,8 +65,6 @@ if __name__=="__main__":
     # ans = [map(x,k=k) for x in a]    
     # for i in range(len(a)):
     #     print(f"{a[i]}->{ans[i]}")
-    x = np.arange(-20, 20)
-    print(x)
-    y = modify_red_to_green(x, k=5)
-    for i in range(len(x)):
-        print(f"{x[i]} -> {y[i]}")
+    print("start    ")
+    x = torch.Tensor([[[[1,2,3],[4,5,6],[7,8,9]]]])
+    print(modify_red_to_green(x, k=5))
