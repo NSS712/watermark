@@ -87,8 +87,9 @@ def compression(images, quality=50, type="RGB"):
 
 def attack_all(images,k,target_fpr=0.1, type="RGB"):
     # 攻击
-    images_crop = random_crop(images,area_ratio=0.5,type=type) # 剪裁0.5的面积
-    images_compressed = compression(images,quality=10, type=type) # 以质量为10进行压缩
+    images = images_to_numpy(images)
+    images_crop = random_crop(images,area_ratio=0.75,type=type)
+    images_compressed = compression(images,quality=25, type=type)
     # 计算z检验
     z_watermark = z_check(images,k=k)
     z_crop = z_check(images_crop,k=k)

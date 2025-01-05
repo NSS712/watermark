@@ -73,7 +73,7 @@ def numpy_to_images(numpy_array, type="RGB"):
     # 转换通道维度到最后，形状变为 (n, height, width, 3)
     numpy_array = np.transpose(numpy_array, (0, 2, 3, 1))
 
-    # 确保像素值范围在 [0, 255]（如有需要可归一化或调整范围）
+    # 确保像素值范围在 [0, 255]
     numpy_array = np.clip(numpy_array, 0, 255).astype(np.uint8)
 
     # 转换为 Pillow 的 Image 对象
@@ -82,6 +82,9 @@ def numpy_to_images(numpy_array, type="RGB"):
     return images
 
 def images_to_numpy(images, type="RGB"):
+    """
+        把images组成的list转成numpy数组，形状为 (n, 3, 224, 224)
+    """
     return np.array([np.array(img.convert(type)) for img in images]).transpose(0,3,1,2)
 
 def is_green(x, k=5):

@@ -14,14 +14,15 @@ def caculate(images_o, images_w):
 
 def ssim_score(images_ori, images_watermark):
     ans = []
-    images_ori = numpy_to_images(images_ori)
-    images_watermark = numpy_to_images(images_watermark)
+    # images_ori = numpy_to_images(images_ori)
+    # images_watermark = numpy_to_images(images_watermark)
     for i in range(len(images_ori)):
         score, _ = ssim(np.array(images_ori[i].convert('L')), np.array(images_watermark[i].convert('L')), full=True)
         ans.append(score)
     return np.array(ans).mean()
 
 def calculate_mean_psnr(images1, images2):
+    images1, images2 = images_to_numpy(images1), images_to_numpy(images2)
     if images1.shape != images2.shape:
         raise ValueError("The dimensions of the two image batches do not match!")
     
