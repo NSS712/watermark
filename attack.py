@@ -7,6 +7,7 @@ from sklearn.metrics import roc_curve, roc_auc_score
 import time
 from utils import *
 from scipy.interpolate import interp1d
+from add_watermark import Watermark_k_layer
 
 def rotate_image(images, angle=None, expand=True, type="RGB"):
     """
@@ -91,9 +92,9 @@ def attack_all(images,k,target_fpr=0.1, type="RGB"):
     images_crop = random_crop(images,area_ratio=0.75,type=type)
     images_compressed = compression(images,quality=25, type=type)
     # 计算z检验
-    z_watermark = z_check(images,k=k)
-    z_crop = z_check(images_crop,k=k)
-    z_compressed = z_check(images_compressed,k=k)
+    z_watermark = Watermark_k_layer.z_check(images,k)
+    z_crop = Watermark_k_layer.z_check(images_crop,k)
+    z_compressed = Watermark_k_layer.z_check(images_compressed,k)
     n = images.shape[0]//2
     y_true = np.array([1] * n + [0] * n)
     

@@ -1,5 +1,5 @@
 import numpy as np
-from attack import images_to_numpy, numpy_to_images
+from utils import images_to_numpy, numpy_to_images
 import torch
 import torch.fft as fft
 
@@ -65,7 +65,7 @@ class Watermark_k_layer:
         检测图像是否嵌入了水印。
         """
         # 将图像转换为 NumPy 数组并转为张量
-        images = torch.from_numpy(images_to_numpy(images))
+        images = torch.from_numpy(images)
 
         # 计算 FFT 并提取模值
         X = torch.fft.fft2(images)
