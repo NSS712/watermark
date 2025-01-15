@@ -46,10 +46,16 @@ class Watermark_k_layer:
         images_fft_shifted = torch.fft.fftshift(images_fft, dim=(-1, -2))
         images_fft_mag = torch.sqrt(images_fft_shifted.real**2 + images_fft_shifted.imag**2)
         images_fft_phase = torch.atan2(images_fft_shifted.imag, images_fft_shifted.real)
-
+        # print("ori  ="*20)
+        # print(images_fft_mag[0:2,0:2,0:2,0:2])
+        is_green = np.vectorize(Watermark_k_layer.is_green)
+        # print(is_green(images_fft_mag[0:2,0:2,0:2,0:2], k))
         # 修改模值（嵌入水印）
         map = np.vectorize(Watermark_k_layer.map)
         images_fft_mag = map(images_fft_mag.detach().numpy(), k)
+        # print("modi  ="*20)
+        # print(images_fft_mag[0:2,0:2,0:2,0:2])
+        # print(is_green(images_fft_mag[0:2,0:2,0:2,0:2], k))
         images_fft_mag = torch.from_numpy(images_fft_mag)
 
         # 重新组合频谱
@@ -73,8 +79,8 @@ class Watermark_k_layer:
         X_shifted = torch.fft.fftshift(X, dim=(-1, -2))
         X_shifted_mag = torch.sqrt(X_shifted.real**2 + X_shifted.imag**2).detach().numpy()
         is_green = np.vectorize(Watermark_k_layer.is_green)
-        print("z_check",X_shifted_mag[0:2,0:2,0:2,0:2])
-        print(is_green(X_shifted_mag[0:2,0:2,0:2,0:2], k))
+        # print("debug:\n",X_shifted_mag[0:2,0:2,0:2,0:2])
+        # print(is_green(X_shifted_mag[0:2,0:2,0:2,0:2], k))
         # 检测水印的存在（统计是否符合嵌入规则）
         n = images.shape[1] * images.shape[2] * images.shape[3]
 
@@ -93,9 +99,9 @@ class Watermark_k_layer:
         t = np.floor(x / base)
         if t % 2: # 红区
             if x % base < base / 2:
-                return x - x % base - 0.001
+                return x - x % base - 0.5
             else:
-                return np.ceil(x / base) * base 
+                return np.ceil(x / base) * base + 0.5
         else:
             return x
     
