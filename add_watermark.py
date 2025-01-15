@@ -48,7 +48,7 @@ class Watermark_k_layer:
         images_fft_phase = torch.atan2(images_fft_shifted.imag, images_fft_shifted.real)
 
         # 修改模值（嵌入水印）
-        images_fft_mag = np.vectorize(Watermark_k_layer.scalling)(images_fft_mag.detach().numpy(), k)
+        images_fft_mag = np.vectorize(Watermark_k_layer.map)(images_fft_mag.detach().numpy(), k)
         images_fft_mag = torch.from_numpy(images_fft_mag)
 
         # 重新组合频谱
@@ -110,7 +110,7 @@ class Watermark_k_layer:
         """
         base = Watermark_k_layer.base(x, k)
         t = np.floor(x / base)
-        return t % 2 == 0
+        return t % 2 < 0.0001
 
     @staticmethod
     def log(x, base):
