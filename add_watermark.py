@@ -2,6 +2,7 @@ import numpy as np
 from utils import images_to_numpy, numpy_to_images
 import torch
 import torch.fft as fft
+import cv2
 
 def map(x, k=5):
     if (x//k)%2 : # x属于红区
@@ -48,7 +49,7 @@ class Watermark_k_layer:
         images_fft_phase = torch.atan2(images_fft_shifted.imag, images_fft_shifted.real)
 
         # 修改模值（嵌入水印）
-        images_fft_mag = np.vectorize(Watermark_k_layer.map)(images_fft_mag.detach().numpy(), k)
+        images_fft_mag = np.vectorize(Watermark_k_layer.scalling)(images_fft_mag.detach().numpy(), k)
         images_fft_mag = torch.from_numpy(images_fft_mag)
 
         # 重新组合频谱
@@ -58,6 +59,43 @@ class Watermark_k_layer:
 
         # 转回 NumPy 格式并返回
         return numpy_to_images(images_modified.detach().numpy())
+
+    @staticmethod
+    def dct(images):
+        image_array = [np.array(image, dtype=np.float32) for image in images]
+        ans = []
+        for img in image_array:
+            dct_result = np.zeros_like(img)
+            for i in range(3):
+                dct_result[:, :, i] = cv2.dct(img[:, :, i])  # DCT
+            ans.append(dct_result)
+        return np.array(ans)
+    
+    @staticmethod
+    def idct(images):
+        ans = []
+        for img in images:
+            idct_result = np.zeros_like(img)
+            for i in range(3):
+                idct_result[:, :, i] = cv2.idct(img[:, :, i])
+            ans.append(idct_result)
+        return np.array(ans)
+
+    @staticmethod
+    def dct_change(images, k):
+        image_array = [np.array(image, dtype=np.float32) for image in images]
+        images_dct = Watermark_k_layer.dct(image_array)
+        images = np.vectorize(Watermark_k_layer.scalling_pos)(images_dct, k)
+        return numpy_to_images(Watermark_k_layer.idct(images).transpose(0, 3, 1, 2))
+
+
+    @staticmethod
+    def dct_z_check(images, k):
+        n = images[0].shape[1] * images[0].shape[2] * images[0].shape[0]
+        images = numpy_to_images(images)
+        images_dct = Watermark_k_layer.dct(images)
+        is_green = np.vectorize(Watermark_k_layer.is_green)
+        return np.array([np.sum(is_green(np.abs(img), k))/n for img in images_dct])
 
     @staticmethod
     def z_check(images, k):
@@ -74,8 +112,9 @@ class Watermark_k_layer:
 
         # 检测水印的存在（统计是否符合嵌入规则）
         n = images.shape[1] * images.shape[2] * images.shape[3]
+        is_green = np.vectorize(Watermark_k_layer.is_green)
         watermark_scores = np.array([
-            (np.sum(Watermark_k_layer.is_green(img, k))) / n
+            (np.sum(is_green(img, k))) / n
             for img in X_shifted_mag
         ])
         return watermark_scores
@@ -87,20 +126,30 @@ class Watermark_k_layer:
         """
         base = Watermark_k_layer.base(x, k)
         t = np.floor(x / base)
-        if t % 2: # 红区
+        if t >=2 and t % 2: # 红区
             if x % base < base / 2:
                 return x - x % base - 0.0001
             else:
                 return (np.floor(x / base) + 1) * base
         else:
             return x
-    
+        
+    @staticmethod
+    def scalling_pos(x, k):
+        if x < 0:
+            return -Watermark_k_layer.scalling(-x, k)
+        else:
+            return Watermark_k_layer.scalling(x, k)
+        
+
+    @staticmethod
     def scalling(x,k):
         base = Watermark_k_layer.base(x, k)
+        if x < 2 * base:
+            return x
         base_2 = x - x % (2 * base)
         sc = base_2 + (x % (2 * base)) / 2
         return sc
-
 
 
     @staticmethod
@@ -109,8 +158,10 @@ class Watermark_k_layer:
         判断模值是否满足水印规则。
         """
         base = Watermark_k_layer.base(x, k)
+        if x < 2 * base:
+            return True
         t = np.floor(x / base)
-        return t % 2 < 0.0001
+        return t % 2 == 0
 
     @staticmethod
     def log(x, base):

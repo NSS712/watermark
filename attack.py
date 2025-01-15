@@ -51,7 +51,8 @@ def random_crop(images, area_ratio, type="RGB"):
     target_area = img_width * img_height * area_ratio
 
     # 随机生成裁剪区域的宽高（保持接近原图宽高比）
-    aspect_ratio = random.uniform(0.5, 2.0)  # 宽高比随机生成
+    # aspect_ratio = random.uniform(0.5, 2.0)  # 宽高比随机生成
+    aspect_ratio = img_width / img_height  # 使用原图宽高比
     crop_width = int(round(math.sqrt(target_area * aspect_ratio)))
     crop_height = int(round(math.sqrt(target_area / aspect_ratio)))
 
@@ -86,7 +87,7 @@ def compression(images, quality=50, type="RGB"):
         images_com.append(img_com)
     return images_to_numpy(images_com)
 
-def attack_all(images,k,target_fpr=0.1, type="RGB"):
+def attack_all(images,k,target_fpr=0.01, type="RGB"):
     # 攻击
     images = images_to_numpy(images)
     images_crop = random_crop(images,area_ratio=0.75,type=type)
@@ -96,7 +97,7 @@ def attack_all(images,k,target_fpr=0.1, type="RGB"):
     z_crop = Watermark_k_layer.z_check(images_crop,k)
     z_compressed = Watermark_k_layer.z_check(images_compressed,k)
     n = images.shape[0]//2
-    y_true = np.array([1] * n + [0] * n)
+    y_true = np.array([1] * n + [0] * n)   
     
     results = []
     for z_values in [z_watermark, z_crop, z_compressed]:
