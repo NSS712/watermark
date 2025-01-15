@@ -3,14 +3,14 @@ from utils import images_to_numpy, numpy_to_images
 import torch
 import torch.fft as fft
 
-def map(x, k=5):
-    if (x//k)%2 : # x属于红区
-        if x%k < k//2 : # 向下取整
-            return x - x%k - 1
-        else:
-            return (x//k + 1)*k
-    else:
-        return x
+# def map(x, k=5):
+#     if (x//k)%2 : # x属于红区
+#         if x%k < k//2 : # 向下取整
+#             return x - x%k - 1
+#         else:
+#             return (x//k + 1)*k
+#     else:
+#         return x
 
 def modify_red_to_green(images, k=5, value_range=None):
     """
@@ -48,7 +48,8 @@ class Watermark_k_layer:
         images_fft_phase = torch.atan2(images_fft_shifted.imag, images_fft_shifted.real)
 
         # 修改模值（嵌入水印）
-        images_fft_mag = np.vectorize(Watermark_k_layer.map)(images_fft_mag.detach().numpy(), k)
+        map = np.vectorize(Watermark_k_layer.map)
+        images_fft_mag = map(images_fft_mag.detach().numpy(), k)
         images_fft_mag = torch.from_numpy(images_fft_mag)
 
         # 重新组合频谱
@@ -71,11 +72,14 @@ class Watermark_k_layer:
         X = torch.fft.fft2(images)
         X_shifted = torch.fft.fftshift(X, dim=(-1, -2))
         X_shifted_mag = torch.sqrt(X_shifted.real**2 + X_shifted.imag**2).detach().numpy()
-
+        is_green = np.vectorize(Watermark_k_layer.is_green)
+        print("z_check",X_shifted_mag[0:2,0:2,0:2,0:2])
+        print(is_green(X_shifted_mag[0:2,0:2,0:2,0:2], k))
         # 检测水印的存在（统计是否符合嵌入规则）
         n = images.shape[1] * images.shape[2] * images.shape[3]
+
         watermark_scores = np.array([
-            (np.sum(Watermark_k_layer.is_green(img, k))) / n
+            (np.sum(is_green(img, k))) / n
             for img in X_shifted_mag
         ])
         return watermark_scores
@@ -85,30 +89,29 @@ class Watermark_k_layer:
         """
         对模值进行水印嵌入的核心逻辑。
         """
-        base = Watermark_k_layer.base(x, k)
+        base = k
         t = np.floor(x / base)
         if t % 2: # 红区
             if x % base < base / 2:
-                return x - x % base - 0.0001
+                return x - x % base - 0.001
             else:
-                return (np.floor(x / base) + 1) * base
+                return np.ceil(x / base) * base 
         else:
             return x
     
+    @staticmethod
     def scalling(x,k):
         base = Watermark_k_layer.base(x, k)
         base_2 = x - x % (2 * base)
         sc = base_2 + (x % (2 * base)) / 2
         return sc
 
-
-
     @staticmethod
     def is_green(x, k):
         """
         判断模值是否满足水印规则。
         """
-        base = Watermark_k_layer.base(x, k)
+        base = k
         t = np.floor(x / base)
         return t % 2 < 0.0001
 
